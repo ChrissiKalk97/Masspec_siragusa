@@ -10,27 +10,6 @@ from pyteomics import parser
 # Start of analysis
 ###########################################################################################################################################################
 def main():
-    # proteinGroups = pd.read_csv('../proteinGroups.txt', sep='\t', header=0)
-    # print(proteinGroups.head())
-    # print(proteinGroups.columns)
-    # proteinGroups = proteinGroups.loc[:, ['Protein IDs',
-    #                                       'Peptide counts (all)',
-    #                                       'Peptide counts (razor+unique)',
-    #                                       'Peptide counts (unique)']]
-    # print(proteinGroups.head(20))
-    # proteinGroups = proteinGroups[proteinGroups['Protein IDs'].str.contains(
-    #     'ENSG')]
-    # print(proteinGroups.head())
-    # proteinGroups['Peptide counts (unique)'] = proteinGroups['Peptide counts (unique)'].apply(
-    #     lambda x: str(x).split(';') if type(x) != 'int' else [x])
-
-    # # filter for SO proteins having at least 2 peptides found
-    # proteinGroups['Peptide counts (all)'] = proteinGroups['Peptide counts (all)'].apply(
-    #     lambda x: str(x).split(';') if type(x) != 'int' else [x])
-    # proteinGroups['Protein IDs'] = proteinGroups['Protein IDs'].apply(
-    #     lambda x: str(x).split(';') if type(x) != 'float' else [x])
-    # print(proteinGroups[((proteinGroups['Protein IDs'].str.len() == 1) & (
-    #     proteinGroups['Peptide counts (all)'].apply(lambda x: int(x[0])) > 1))])
 
     # read in peptide evidence table and select cols of interest
     peptides_found = pd.read_excel('../peptides_processed_endothel.xlsx')
@@ -137,6 +116,7 @@ def main():
     sequences_per_prot_NMD.loc['Unique peptide percentage found'] = 0
 
     for row in sequences_per_prot_NMD.index:
+        go_on = True
         protein = sequences_per_prot_NMD.loc[row, 'Proteins']
         sequences = sequences_per_prot_NMD.loc[row, 'Sequence']
         sequences_cleaved = cleavage_df[cleavage_df['Proteins']
@@ -150,7 +130,9 @@ def main():
                     if not all(any(seq in sc for sc in sequences_cleaved) for seq in sequences):
                         print(sequences)
                         print(sequences_cleaved)
-            else:
+                        go_on = False
+
+            if go_on == True:
                 if len(sequences_cleaved) > 0:
                     sequences_per_prot_NMD.loc[row, 'Proportion found peptides'] = len(
                         [seq for seq in sequences if seq in sequences_cleaved])/len(sequences_cleaved)
@@ -169,6 +151,8 @@ def main():
                     seq for seq in sequences if seq not in peptide_list}
                 unique_seqs_possible = {
                     seq for seq in sequences_cleaved if seq not in peptide_list}
+                sequences_per_prot_NMD.loc[row, 'Unique peptides possible'] = len(
+                    unique_seqs_possible)
                 sequences_per_prot_NMD.loc[row,
                                            'Unique peptides found'] = len(unique_seqs_found)
                 if len(unique_seqs_possible) > 0:
@@ -180,18 +164,10 @@ def main():
 
     print(sequences_per_prot_NMD.head(50))
     print(sequences_per_prot_NMD.tail(50))
-    # check_subset = [[seq_single[1:] if seq_single.startswith(
-    #     'M') else seq_single for seq_single in seq] for seq in sequences_per_prot_NMD['Sequence']]
-    # is_subset = [[seq_single if seq_single in sc else "" for seq_single in seq for sc in s_cleaved]
-    #              for seq in check_subset for s_cleaved in cleavage_df['Sequence']]
-
-    # print(f"\nAre the found sequences also found in the cleaved sequences?\
-    #        Allow for the sequence being part of the cleaved sequence:  {is_subset == check_subset}")
-
-    # print(cleavage_df)
 
     sequences_per_prot_NMD.to_csv(
         'unique_peptides_per_SO_protein.tsv', sep='\t')
+
 
     # run
 if __name__ == "__main__":
