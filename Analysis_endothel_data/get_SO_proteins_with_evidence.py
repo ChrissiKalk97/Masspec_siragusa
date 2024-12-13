@@ -1,9 +1,13 @@
-import csv
+import os.path
 import pandas as pd
-from matplotlib import pyplot as plt
-from matplotlib_venn import venn3
 from Bio import SeqIO
 from pyteomics import parser
+
+from matplotlib import pyplot as plt
+import seaborn as sbn
+
+
+Cleavage_path = '/Users/christina/Documents/Riboseq/Massspec_Siragusa/Analysis_endothel_data/cleavage_approach/'
 
 
 ###########################################################################################################################################################
@@ -113,7 +117,7 @@ def main():
     sequences_per_prot_NMD['Nr found peptides'] = 0
     sequences_per_prot_NMD['Unique peptides found'] = 0
     sequences_per_prot_NMD['Unique peptides possible'] = 0
-    sequences_per_prot_NMD.loc['Unique peptide percentage found'] = 0
+    sequences_per_prot_NMD['Unique peptide percentage found'] = 0
 
     for row in sequences_per_prot_NMD.index:
         go_on = True
@@ -165,10 +169,48 @@ def main():
     print(sequences_per_prot_NMD.head(50))
     print(sequences_per_prot_NMD.tail(50))
 
+    unique_seqs_greater_02 = sequences_per_prot_NMD[
+        sequences_per_prot_NMD['Unique peptide percentage found'] > 0.2]
+    print(unique_seqs_greater_02)
+    unique_seqs_greater_02[unique_seqs_greater_02['Unique peptides found'] > 1]
+
     sequences_per_prot_NMD.to_csv(
         'unique_peptides_per_SO_protein.tsv', sep='\t')
 
+    ############################################################################
+    # PLOTTING #################################################################
+    ############################################################################
 
-    # run
+    # plot the distribution of the number of found unique peptides
+    figure, ax = plt.subplots()
+    fig = sbn.histplot(
+        sequences_per_prot_NMD['Unique peptides found'], ax=ax)
+    fig = fig.get_figure()
+    fig.savefig(os.path.join(Cleavage_path, 'plots',
+                'proportion_found_peptides_dist.png'))
+    plt.close()
+
+    # plot distributions of unique and total percentage of found peptides
+    figure, ax = plt.subplots()
+    fig = sbn.histplot(
+        sequences_per_prot_NMD['Unique peptide percentage found'], ax=ax)
+    ax.set_xlim(0, 1.5)
+    ax.set_ylim(0, 500)
+    fig = fig.get_figure()
+    fig.savefig(os.path.join(Cleavage_path,
+                'Unique_peptide_percentage_dist.png'))
+    plt.close()
+
+    figure, ax = plt.subplots()
+    fig = sbn.histplot(
+        sequences_per_prot_NMD['Proportion found peptides'], ax=ax)
+    ax.set_xlim(0, 1.5)
+    ax.set_ylim(0, 500)
+    fig = fig.get_figure()
+    fig.savefig(os.path.join(Cleavage_path,
+                'proportion_found_peptides_dist.png'))
+    plt.close()
+
+
 if __name__ == "__main__":
     main()
