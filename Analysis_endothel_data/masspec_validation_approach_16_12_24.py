@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 import seaborn as sbn
 
 
-Cleavage_path = '/Users/christina/Documents/Riboseq/Massspec_Siragusa/Analysis_endothel_data/cleavage_approach/'
+Cleavage_path = '/Users/christina/Documents/Riboseq/Massspec_Siragusa/Analysis_endothel_data/approachapproach_16_12_24'
 
 
 ###########################################################################################################################################################
@@ -71,21 +71,23 @@ def main():
     pep_found_groups['Proteins'] = pep_found_groups['Proteins'].apply(
         lambda x: list(x) if type(x) != list else x)
     pep_found_groups['Proteins'] = pep_found_groups['Proteins'].apply(
-        lambda x: [prot.split('_') for prot in x if prot.startswith('ENSG')])
+        lambda x: [prot.split('_') if prot.startswith('ENSG') else prot for prot in x])
     pep_found_groups['Proteins'] = pep_found_groups['Proteins'].apply(
-        lambda x: [prot[:4] for prot in x if prot[0].startswith('ENSG')])
+        lambda x: [prot[:4] if prot[0].startswith('ENSG') else prot for prot in x])
     pep_found_groups['Proteins'] = pep_found_groups['Proteins'].apply(
-        lambda x: [':'.join(prot) for prot in x if prot[0].startswith('ENSG')])
+        lambda x: [':'.join(prot) if prot[0].startswith('ENSG') else prot for prot in x])
     pep_found_groups['Unique_peptide'] = pep_found_groups['Proteins'].apply(
-        lambda x: 1 if len(x) == 1 else 0)
+        lambda x: 1 if all([y.startswith('ENSG') for y in x]) else 0)
+    unique_peptides = pep_found_groups[pep_found_groups['Unique_peptide'] == 1]
 
     # explode protein group information to obtain information per protein
-    pep_found_groups = pep_found_groups.explode(['Proteins'])
-    protein_counts = pep_found_groups['Proteins'].value_counts()
-    proteins_keep = protein_counts[protein_counts > 1].index
-    pep_found_groups = pep_found_groups[pep_found_groups['Proteins'].isin(
-        proteins_keep)]
-    sequences_per_prot = pep_found_groups.groupby(['Proteins'])[
+    unique_peptides = unique_peptides.explode(['Proteins'])
+    protein_counts = unique_peptides['Proteins'].value_counts()
+    proteins_keep = protein_counts.index
+    # proteins_keep = protein_counts[protein_counts > 1].index
+    # pep_found_groups = pep_found_groups[pep_found_groups['Proteins'].isin(
+    #     proteins_keep)]
+    sequences_per_prot = unique_peptides.groupby(['Proteins'])[
         ['Sequence']].agg(list).reset_index()
 
     # get possible peptides via cleavage with trypsin as dict
@@ -114,7 +116,7 @@ def main():
 
     sequences_per_prot_NMD['Proportion found peptides'] = 0
     sequences_per_prot_NMD['Nr possible cleaved peptides'] = 0
-    sequences_per_prot_NMD['Nr found peptides'] = 0
+    sequences_per_prot_NMD['Nr non-unique found peptides'] = 0
     sequences_per_prot_NMD['Unique peptides found'] = 0
     sequences_per_prot_NMD['Unique peptides possible'] = 0
     sequences_per_prot_NMD['Unique peptide percentage found'] = 0
@@ -128,13 +130,13 @@ def main():
         if not sequences_cleaved.empty:
             sequences_cleaved = sequences_cleaved.iloc[0]
             if not all(any(seq in sc for sc in sequences_cleaved) for seq in sequences):
-                if len([seq for seq in sequences if seq.startswith('M')]) > 0:
-                    sequences = [seq[1:]
-                                 for seq in sequences if seq.startswith('M')]
-                    if not all(any(seq in sc for sc in sequences_cleaved) for seq in sequences):
-                        print(sequences)
-                        print(sequences_cleaved)
-                        go_on = False
+                # if len([seq for seq in sequences if seq.startswith('M')]) > 0:
+                #     sequences = [seq[1:]
+                #                  for seq in sequences if seq.startswith('M')]
+                # if not all(any(seq in sc for sc in sequences_cleaved) for seq in sequences):
+                print(sequences)
+                print(sequences_cleaved)
+                go_on = False
 
             if go_on == True:
                 if len(sequences_cleaved) > 0:
@@ -144,7 +146,7 @@ def main():
                     sequences_per_prot_NMD.loc[row,
                                                'Proportion found peptides'] = 0
 
-                sequences_per_prot_NMD.loc[row, 'Nr found peptides'] = len(
+                sequences_per_prot_NMD.loc[row, 'Nr non-unique found peptides'] = len(
                     [seq for seq in sequences if seq in sequences_cleaved])
 
                 sequences_per_prot_NMD.loc[row, 'Nr possible cleaved peptides'] = len(
@@ -173,44 +175,6 @@ def main():
         sequences_per_prot_NMD['Unique peptide percentage found'] > 0.2]
     print(unique_seqs_greater_02)
     unique_seqs_greater_02[unique_seqs_greater_02['Unique peptides found'] > 1]
-
-    sequences_per_prot_NMD.to_csv(os.path.join(Cleavage_path,
-                                               'unique_peptides_per_SO_protein.tsv'), sep='\t')
-
-    ############################################################################
-    # PLOTTING #################################################################
-    ############################################################################
-
-    # plot the distribution of the number of found unique peptides
-    figure, ax = plt.subplots()
-    fig = sbn.histplot(
-        sequences_per_prot_NMD['Unique peptides found'], ax=ax)
-    ax.set_xlim(0, 10)
-    fig = fig.get_figure()
-    fig.savefig(os.path.join(Cleavage_path, 'plots',
-                'proportion_found_peptides_dist.png'))
-    plt.close()
-
-    # plot distributions of unique and total percentage of found peptides
-    figure, ax = plt.subplots()
-    fig = sbn.histplot(
-        sequences_per_prot_NMD['Unique peptide percentage found'], ax=ax)
-    ax.set_xlim(0, 1.5)
-    ax.set_ylim(0, 500)
-    fig = fig.get_figure()
-    fig.savefig(os.path.join(Cleavage_path,
-                'Unique_peptide_percentage_dist.png'))
-    plt.close()
-
-    figure, ax = plt.subplots()
-    fig = sbn.histplot(
-        sequences_per_prot_NMD['Proportion found peptides'], ax=ax)
-    ax.set_xlim(0, 1.5)
-    ax.set_ylim(0, 500)
-    fig = fig.get_figure()
-    fig.savefig(os.path.join(Cleavage_path,
-                'proportion_found_peptides_dist.png'))
-    plt.close()
 
 
 if __name__ == "__main__":

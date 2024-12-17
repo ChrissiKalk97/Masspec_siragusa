@@ -24,27 +24,6 @@ protein_regions_second_approach = pd.read_csv(
     os.path.join(Cleavage_path, 'unique_peptides_per_SO_protein.tsv'), sep='\t', index_col=0)
 
 
-# plot distributions of unique and total percentage of found peptides
-figure, ax = plt.subplots()
-fig = sbn.histplot(
-    protein_regions_second_approach['Unique peptide percentage found'], ax=ax)
-ax.set_xlim(0, 1.5)
-ax.set_ylim(0, 500)
-fig = fig.get_figure()
-fig.savefig(os.path.join(Cleavage_path, 'Unique_peptide_percentage_dist.png'))
-plt.close()
-
-
-figure, ax = plt.subplots()
-fig = sbn.histplot(
-    protein_regions_second_approach['Proportion found peptides'], ax=ax)
-ax.set_xlim(0, 1.5)
-ax.set_ylim(0, 500)
-fig = fig.get_figure()
-fig.savefig(os.path.join(Cleavage_path, 'proportion_found_peptides_dist.png'))
-plt.close()
-
-
 protein_regions_second_approach = protein_regions_second_approach[
     protein_regions_second_approach['Unique peptide percentage found'] > 0.2]
 protein_regions_second_approach['Proteins_ribo'] = protein_regions_second_approach['Proteins'].str.split(
