@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 import seaborn as sbn
 
 
-Cleavage_path = '/Users/christina/Documents/Riboseq/Massspec_Siragusa/Analysis_endothel_data/approachapproach_16_12_24'
+Cleavage_path = '/Users/christina/Documents/Riboseq/Massspec_Siragusa/Analysis_endothel_data/approach_16_12_24'
 
 
 ###########################################################################################################################################################
@@ -16,7 +16,8 @@ Cleavage_path = '/Users/christina/Documents/Riboseq/Massspec_Siragusa/Analysis_e
 def main():
 
     # read in peptide evidence table and select cols of interest
-    peptides_found = pd.read_excel('../peptides_processed_endothel.xlsx')
+    peptides_found = pd.read_excel(
+        '/Users/christina/Documents/Riboseq/Massspec_Siragusa/peptides_processed_endothel.xlsx')
     peptides_found = peptides_found[['Proteins',
                                     'Leading razor protein',
                                      'Gene names',
@@ -134,9 +135,9 @@ def main():
                 #     sequences = [seq[1:]
                 #                  for seq in sequences if seq.startswith('M')]
                 # if not all(any(seq in sc for sc in sequences_cleaved) for seq in sequences):
-                print(sequences)
+                print(protein, sequences)
                 print(sequences_cleaved)
-                go_on = False
+                # go_on = False
 
             if go_on == True:
                 if len(sequences_cleaved) > 0:
@@ -146,7 +147,7 @@ def main():
                     sequences_per_prot_NMD.loc[row,
                                                'Proportion found peptides'] = 0
 
-                sequences_per_prot_NMD.loc[row, 'Nr non-unique found peptides'] = len(
+                sequences_per_prot_NMD.loc[row, 'Nr peptides in cleavage list'] = len(
                     [seq for seq in sequences if seq in sequences_cleaved])
 
                 sequences_per_prot_NMD.loc[row, 'Nr possible cleaved peptides'] = len(
@@ -171,10 +172,9 @@ def main():
     print(sequences_per_prot_NMD.head(50))
     print(sequences_per_prot_NMD.tail(50))
 
-    unique_seqs_greater_02 = sequences_per_prot_NMD[
-        sequences_per_prot_NMD['Unique peptide percentage found'] > 0.2]
-    print(unique_seqs_greater_02)
-    unique_seqs_greater_02[unique_seqs_greater_02['Unique peptides found'] > 1]
+    SO_with_unique_peptides = sequences_per_prot_NMD['Proteins']
+    SO_with_unique_peptides.to_csv(os.path.join(
+        Cleavage_path, 'SO_with_peptides_only_from_SO_proteins.csv'))
 
 
 if __name__ == "__main__":
