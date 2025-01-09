@@ -68,14 +68,18 @@ def main():
                                                 'Unique (Proteins)',
                                                 'Score'
                                                 ]]
+
+    # Make all proteins to list, also the single protein groups
     pep_found_groups['Proteins'] = pep_found_groups['Proteins'].apply(
         lambda x: list(x) if type(x) != list else x)
+    # Filter for at least one SO protein beign in the group
     pep_found_groups['Proteins'] = pep_found_groups['Proteins'].apply(
         lambda x: [prot.split('_') for prot in x if prot.startswith('ENSG')])
     pep_found_groups['Proteins'] = pep_found_groups['Proteins'].apply(
         lambda x: [prot[:4] for prot in x if prot[0].startswith('ENSG')])
     pep_found_groups['Proteins'] = pep_found_groups['Proteins'].apply(
         lambda x: [':'.join(prot) for prot in x if prot[0].startswith('ENSG')])
+    # filter for Protein Groups with only one Protein: peptides are unique to that protein
     pep_found_groups['Unique_peptide'] = pep_found_groups['Proteins'].apply(
         lambda x: 1 if len(x) == 1 else 0)
 
